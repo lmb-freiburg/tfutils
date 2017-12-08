@@ -43,7 +43,7 @@ class SimpleTrainer(TrainerBase):
         self._timeline_file = os.path.join(self._train_logdir, 'timeline.ctf.json')
 
 
-    def _create_saver(self, max_to_keep, saver_var_list, checkpoints_path):
+    def _create_saver(self, max_to_keep, saver_var_list, checkpoints_dir):
         """Returns the tf.train.Saver object
 
         max_to_keep: int
@@ -52,6 +52,9 @@ class SimpleTrainer(TrainerBase):
         saver_var_list: list or dict
             A list of variables to save or a dictionary which maps names to variables.
             The list or dict must contain the global_step
+
+        checkpoints_dir: str
+            This is the directory where the checkpoints are stored e.g. 'train_dir/checkpoints/'
 
         Raises ValueError if the global_step is missing
         """
@@ -69,13 +72,17 @@ class SimpleTrainer(TrainerBase):
             var_list=saver_var_list,
             max_to_keep=max_to_keep,
             )
-        saver.recover_last_checkpoints([checkpoints_path])
+
+        state = tf.train.get_checkpoint_state(checkpoints_dir)
+        if not state is None:
+            checkpoint_paths = state.all_model_checkpoint_paths
+            saver.recover_last_checkpoints(checkpoint_paths)
         return saver
             
 
         
 
-    def load_checkpoint(self, checkpoint_filepath=None, verbose=True):
+    def load_checkpoint(self, checkpoint_filepath=None, verbose=True, remove_nonfinite_checkpoints=False):
         """Restores variables from a checkpoint file.
 
         checkpoint_filepath: str
@@ -85,6 +92,10 @@ class SimpleTrainer(TrainerBase):
         verbose: bool
             If True prints which variables will be restored or skipped
         
+        remove_nonfinite_checkpoints: bool
+            If True a checkpoint which contains nonfinite values will be removed 
+            before raising an exception.
+            This option has not effect if checkpoint_filepath is given.
         """
         if checkpoint_filepath:
             print('loading', checkpoint_filepath, flush=True)
@@ -95,11 +106,11 @@ class SimpleTrainer(TrainerBase):
             if checkpoints:
                 last_checkpoint = sorted(checkpoints)[-1][1]
                 print('loading', last_checkpoint, flush=True)
-                optimistic_restore(self._session, last_checkpoint, verbose=verbose)
+                optimistic_restore(self._session, last_checkpoint, verbose=verbose, remove_nonfinite_checkpoints=remove_nonfinite_checkpoints)
             else:
                 print('nothing to restore. no checkpoint found.', flush=True)
 
-    
+
 
 
     def mainloop(self, 
@@ -197,8 +208,8 @@ class SimpleTrainer(TrainerBase):
             custom_int_ops = []
 
         # init savers and summary writer
-        saver = self._create_saver(saver_max_to_keep, saver_var_list, self._checkpoints_path)
-        recovery_saver = self._create_saver(2, saver_var_list, self._recovery_checkpoints_path)
+        saver = self._create_saver(saver_max_to_keep, saver_var_list, self._checkpoints_dir)
+        recovery_saver = self._create_saver(2, saver_var_list, self._recovery_checkpoints_dir)
         self._summary_writer = tf.summary.FileWriter(self._train_logdir,graph=tf.get_default_graph())
 
 

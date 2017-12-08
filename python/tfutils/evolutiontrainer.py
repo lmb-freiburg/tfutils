@@ -239,7 +239,7 @@ class EvolutionTrainer:
         return self._current_evolution in evos
 
 
-    def load_checkpoint(self, checkpoint_filepath=None, verbose=True):
+    def load_checkpoint(self, checkpoint_filepath=None, verbose=True, remove_nonfinite_checkpoints=False):
         """Restores variables from a checkpoint file.
 
         checkpoint_filepath: str
@@ -249,6 +249,10 @@ class EvolutionTrainer:
         verbose: bool
             If True prints which variables will be restored or skipped
         
+        remove_nonfinite_checkpoints: bool
+            If True a checkpoint which contains nonfinite values will be removed 
+            before raising an exception.
+            This option has not effect if checkpoint_filepath is given.
         """
         if checkpoint_filepath:
             print('loading', checkpoint_filepath, flush=True)
@@ -263,7 +267,7 @@ class EvolutionTrainer:
 
                 last_checkpoint = self._init_snapshot[2]
                 print('loading', last_checkpoint, flush=True)
-                optimistic_restore(self._session, last_checkpoint, ignore_vars=ignore_vars, verbose=verbose)
+                optimistic_restore(self._session, last_checkpoint, ignore_vars=ignore_vars, verbose=verbose, remove_nonfinite_checkpoints=remove_nonfinite_checkpoints)
             else:
                 print('nothing to restore. no checkpoint found.', flush=True)
 

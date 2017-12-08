@@ -21,6 +21,7 @@ import os
 import re
 import time
 import resource
+import shutil
 
 
 def get_stop_time(time_buffer=5*60):
@@ -138,7 +139,7 @@ def list_evolution_checkpoints(train_dir, evolutions):
 
 
 # function based on https://github.com/tensorflow/tensorflow/issues/312
-def optimistic_restore(session, save_file, ignore_vars=None, verbose=False, ignore_incompatible_shapes=False):
+def optimistic_restore(session, save_file, ignore_vars=None, verbose=False, ignore_incompatible_shapes=False, remove_nonfinite_checkpoints=False):
     """This function tries to restore all variables in the save file.
 
     This function ignores variables that do not exist or have incompatible shape.
@@ -159,6 +160,10 @@ def optimistic_restore(session, save_file, ignore_vars=None, verbose=False, igno
     ignore_incompatible_shapes: bool
         If True ignores variables with incompatible shapes.
         If False raises a runtime error f shapes are incompatible.
+
+    remove_nonfinite_checkpoints: bool
+        If True a checkpoint which contains nonfinite values will be removed 
+        before raising an exception.
 
     """
     def vprint(*args, **kwargs): 
@@ -212,6 +217,15 @@ def optimistic_restore(session, save_file, ignore_vars=None, verbose=False, igno
                     raise RuntimeError('failed to restore "{0}" because of incompatible shapes: var: {1} vs saved: {2} '.format(saved_var_name, var_shape, saved_shapes[saved_var_name]))
 
     if nonfinite_values:
+        if remove_nonfinite_checkpoints:
+            # remove the checkpoint
+            checkpoint_dir, file_prefix = os.path.split(save_file)
+            if os.path.isdir(checkpoint_dir):
+                checkpoint_files = [ x for x in os.listdir(checkpoint_dir) if x.startswith(file_prefix) ]
+                for f in checkpoint_files:
+                    print('removing {0}'.format(f), flush=True)
+                    shutil.move(os.path.join(checkpoint_dir,f), os.path.join(checkpoint_dir,'nonfinite_'+f))
+
         raise RuntimeError('"{0}" contains nonfinite values!'.format(save_file))
 
     dbg( '-1-')
