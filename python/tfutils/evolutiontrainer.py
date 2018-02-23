@@ -285,8 +285,11 @@ class EvolutionTrainer:
         saver_interval: int
             Number of iterations between checkpoints.
 
+        saver_timepoints: list of int
+            List of iteration numbers for saving checkpoints
+
         saver_max_to_keep: int
-            Maximum number of snaphots to keep.
+            Maximum number of snapshots to keep.
 
         saver_var_list: list or dict
             A list of variables to save or a dictionary which maps names to variables.

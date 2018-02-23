@@ -117,6 +117,7 @@ class SimpleTrainer(TrainerBase):
             max_iter, 
             train_ops, 
             saver_interval, 
+            saver_timepoints=[],
             saver_max_to_keep=100000,
             saver_var_list=None,
             recovery_saver_interval=60,
@@ -140,8 +141,11 @@ class SimpleTrainer(TrainerBase):
         saver_interval: int
             Number of iterations between checkpoints.
 
+        saver_timepoints: list of int
+            List of iteration numbers for saving checkpoints
+
         saver_max_to_keep: int
-            Maximum number of snaphots to keep.
+            Maximum number of snapshots to keep.
 
         saver_var_list: list or dict
             A list of variables to save or a dictionary which maps names to variables.
@@ -152,7 +156,7 @@ class SimpleTrainer(TrainerBase):
 
         recovery_saver_interval: float
             Time in minutes after last checkpoint which triggers saving a recovery checkpoint.
-
+        
         summary_int_ops: list of tuple
             List of interval and operation tuples.
             E.g. [(100, summary1_op), (200, summary2_op)]
@@ -432,7 +436,7 @@ class SimpleTrainer(TrainerBase):
                 # save checkpoints
                 if global_step_value > start_iteration:
                     now = time.time()
-                    if global_step_value % saver_interval == 0:
+                    if global_step_value % saver_interval == 0 or global_step_value in saver_timepoints:
                         print("# {0}  saving.. ".format(datetime.datetime.fromtimestamp(int(time.time()))),end="")
                         checkpoint = saver.save(self._session, self._checkpoints_path, global_step=global_step_value)
                         print(checkpoint, flush=True)
