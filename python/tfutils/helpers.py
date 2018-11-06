@@ -185,10 +185,14 @@ def optimistic_restore(session, save_file, ignore_vars=None, verbose=False, igno
 
     nonfinite_values = False
 
+    all_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
+    all_vars_dict = { x.name[:-2]: x for x in all_vars }
+
     with tf.variable_scope('', reuse=True):
         for var_name, var_dtype, saved_var_name in var_names:
             dbg( var_name, var_dtype, saved_var_name, end='')
-            curr_var = tf.get_variable(saved_var_name, dtype=var_dtype)
+            # curr_var = tf.get_variable(saved_var_name, dtype=var_dtype)
+            curr_var = all_vars_dict[saved_var_name]
             var_shape = curr_var.get_shape().as_list()
             if var_shape == saved_shapes[saved_var_name]:
                 dbg( ' shape OK')
