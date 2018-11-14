@@ -59,6 +59,28 @@ def add_summary_simple_value(writer, tag, step, simple_value):
     writer.add_summary(s, global_step=step)
 
 
+def add_summary_text(writer, tag, step, text):
+    """Adds an event to the writer
+
+    writer: tf.summary.FileWriter
+        
+    tag: str
+        tag for the value
+
+    step: int
+        the global step
+
+    text: str
+        The text to add to the summary
+    """
+    text_tensor = tf.make_tensor_proto(text, dtype=tf.string)
+    meta = tf.SummaryMetadata()
+    meta.plugin_data.plugin_name = "text"
+    summary = tf.Summary()
+    summary.value.add(tag=tag, metadata=meta, tensor=text_tensor)
+    writer.add_summary(summary, global_step=step)
+
+
 def read_global_step_from_checkpoint(save_file):
     """This function returns the global step for the checkpoint file.
     Returns None if there is no global step stored.
